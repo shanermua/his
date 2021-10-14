@@ -14,12 +14,17 @@ db.connect();
 app.listen(8888);
 console.log('Listening on port 8888...');
 
+app.all('*',(request,response,next)=>{
+
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "*");
+    console.log('all');
+    next();
+});
 app.get('/login',(request,response)=>{
     response.send('POST!');
 });
 app.post('/login',(request,response)=>{
-    response.setHeader("Access-Control-Allow-Origin", "*");
-    response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
     db.query('SELECT * from Users where id="' + request.body['id'] + '"', function (error,results) {
         if (error) throw error;
         if(results.length > 0)
@@ -37,4 +42,29 @@ app.post('/login',(request,response)=>{
             response.json({status: 'OK', login:'id not found'});
         }
     });
+});
+app.post('/patient',(request,response)=>{
+    console.log(request.body)
+    if (request.body['operation'] === 'add')
+    {
+        db.query('INSERT INTO Patients values ("' + request.body['id'] + '", "' + request.body['name'] + '", "' +
+            request.body['sex'] + '", "' + request.body['disease'] + '")', function (error) {
+            if (error) throw error;
+            response.json({status: 'OK'})
+        });
+    }
+    if (request.body['operation'] === 'delete')
+    {
+        db.query('DELETE from Patients where id="'+request.body['id'] + '"', function (error) {
+            if (error) throw error;
+            response.json({status: 'OK'})
+        });
+    }
+    if (request.body['operation'] === 'modify')
+    {
+        db.query('UPDATE Patients set id', function (error) {
+            if (error) throw error;
+            response.json({status: 'OK'})
+        });
+    }
 });
