@@ -12,19 +12,18 @@ const db = mysql.createConnection({
 });
 db.connect();
 app.listen(8888);
-console.log('Listening on port 80...');
-app.get('/login',(request,response)=>{
-    response.send('post');
-})
-app.post('/login',(request,response)=>{
-    console.log(request.body);
-    db.query('SELECT * from Users where id=' + request.body['id'], function(error, results, fields) {
+console.log('Listening on port 8888...');
 
+app.get('/login',(request,response)=>{
+    response.send('POST!');
+});
+app.post('/login',(request,response)=>{
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
+    db.query('SELECT * from Users where id="' + request.body['id'] + '"', function (error,results) {
         if (error) throw error;
         if(results.length > 0)
         {
-            response.setHeader("Access-Control-Allow-Origin", "*");
-            response.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS, DELETE");
             if(results[0]['password'] === request.body['password'])
             {
                 response.cookie('user',1,{maxAge: 10 * 60 * 1000, httpOnly: true});
@@ -38,4 +37,4 @@ app.post('/login',(request,response)=>{
             response.json({status: 'OK', login:'id not found'});
         }
     });
-})
+});
