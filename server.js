@@ -25,7 +25,9 @@ app.get('/login',(request,response)=>{
     response.send('POST!');
 });
 app.post('/login',(request,response)=>{
-    db.query('SELECT * from Users where id="' + request.body['id'] + '"', function (error,results) {
+    let sql='SELECT * from Users where id = ?';
+    let params=[request.body['id']];
+    db.query(sql, params, function (error,results) {
         if (error) throw error;
         if(results.length > 0)
         {
@@ -47,24 +49,45 @@ app.post('/patient',(request,response)=>{
     console.log(request.body)
     if (request.body['operation'] === 'add')
     {
-        db.query('INSERT INTO Patients values ("' + request.body['id'] + '", "' + request.body['name'] + '", "' +
-            request.body['sex'] + '", "' + request.body['disease'] + '")', function (error) {
+        let sql='INSERT INTO Patients values (?,?,?,?)';
+        let params=[request.body['id'], request.body['name'], request.body['sex'], request.body['disease']];
+        db.query(sql, params, function (error) {
             if (error) throw error;
             response.json({status: 'OK'})
         });
     }
     if (request.body['operation'] === 'delete')
     {
-        db.query('DELETE from Patients where id="'+request.body['id'] + '"', function (error) {
+        let sql='DELETE from Patients where id = ?';
+        let params=[request.body['id']];
+        db.query(sql, params, function (error) {
             if (error) throw error;
             response.json({status: 'OK'})
         });
     }
     if (request.body['operation'] === 'modify')
     {
-        db.query('UPDATE Patients set id', function (error) {
+        let sql='UPDATE Patients set name=? ,sex = ?,disease = ?';
+        let params=[request.body['name'],request.body['sex'],request.body['disease']]
+        db.query(sql, params, function (error) {
             if (error) throw error;
-            response.json({status: 'OK'})
+            response.json({status: 'OK'});
+        });
+    }
+    if (request.body['operation'] === 'get')
+    {
+        let sql='SELECT * from Patients where id = ?';
+        let params=[request.body['id']];
+        db.query(sql, params, function (error,results) {
+            if (error) throw error;
+            if(results.length > 0)
+            {
+                response.json({status: 'OK', get: 'yes', id:results[0]['id'], name:results[0]['name'], sex:results[0]['sex'], disease:results[0]['disease']});
+            }
+            else
+            {
+                response.json({status: 'OK', get: 'id no found'})
+            }
         });
     }
 });
