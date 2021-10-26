@@ -15,11 +15,9 @@ app.listen(8888);
 console.log('Listening on port 8888...');
 
 app.all('*',(request,response,next)=>{
-    // console.log(request.body);
     response.setHeader("Access-Control-Allow-Origin", "*");
     response.setHeader("Access-Control-Allow-Methods", "POST");
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    // response.send('ok');
     next();
 });
 app.get('/login',(request,response)=>{
@@ -52,7 +50,6 @@ app.post('/login',(request,response)=>{
     });
 });
 app.post('/patient',(request,response)=>{
-    // console.log(request.body);
     if (request.body['operation'] === 'increase')
     {
         let patient = request.body['patientInfo'];
@@ -62,10 +59,7 @@ app.post('/patient',(request,response)=>{
             if (results.length === 0)
             {
                 let sql='INSERT INTO Patients values (?,?,?,?)';
-
-                // console.log(patient)
                 let params=[patient['id'],patient['name'],patient['sex'],patient['disease']];
-                // let params=[request.body['id'], request.body['name'], request.body['sex'], request.body['disease']];
                 db.query(sql, params, function (error) {
                     if (error) {
                         response.json({status: 'NO', error:error});
@@ -94,10 +88,8 @@ app.post('/patient',(request,response)=>{
     }
     if (request.body['operation'] === 'modify')
     {
-        // console.log(request.body['patientInfo']);
         let sql='UPDATE Patients set name=? ,sex = ?,disease = ? where id = ?';
         let patient = request.body['patientInfo'];
-        // console.log(patient)
         let params=[patient['name'],patient['sex'],patient['disease'],patient['id']];
         db.query(sql, params, function (error) {
             if (error)
@@ -129,89 +121,36 @@ app.post('/patient',(request,response)=>{
         });
     }
 });
-// app.post('/pushRegisterQueue',(request,response)=>{
-//     // let sql='SELECT * from Patients where id = ?';
-//     // let params=[request.body['id']];
-//     db.query(sql, params, function (error,results) {
-//
-//     });
-// });
+app.post('/pushRegisterQueue',(request,response)=>{
+    console.log(request.body)
+    let sql='SELECT clinic from Specialty where id=?';
+    let params=[request.body['specialty']];
+    db.query(sql, params, function (error,result) {
+        console.log(result)
+        let sql='INSERT INTO Queue values (?,?,?,?)';
+        let params=[request.body['id'],result[0]['clinic'],request.body['specialty'],request.body['doctor']];
+        db.query(sql, params, function (error) {
+            console.log(params)
+            if (error) {
+                response.json({status: 'NO', error:error});
+            }
+            response.json({status: 'YES'})
+        });
+    });
+
+
+});
+app.post('/getDoctor',(request,response)=>{
+    let sql='SELECT id as value ,name as label from Doctors where specialty=?';
+    let params=[request.body['specialty']];
+    db.query(sql, params, function (error,result) {
+        if (error) {
+            response.json({status: 'NO', error:error});
+        }
+        response.json({status: 'YES', doctor:result});
+    })
+})
 app.get('/getClinicAndSpecialty',(request,response)=>{
-    // let json=[];
-    // let sql='SELECT * from Clinic';
-    // db.query(sql, function (error,clinicResults) {
-    //     if (error)
-    //     {
-    //         response.json({status: 'ERROR', error:error});
-    //     }
-    //     else
-    //     {
-    //         f1=function(result) {
-    //             console.log('f1')
-    //             return new Promise(function (resovle1) {
-    //                 result.forEach(async function (item) {
-    //                     sql='SELECT * from Specialty where clinic = ?';
-    //                     f2=function (i){
-    //                         console.log('f2')
-    //                         return new Promise(function (resovle2) {
-    //                             db.query(sql, i['id'], function (error, specialtyResults) {
-    //                                 console.log('query')
-    //                                 json.push({label: item['name'], value: item['name'], children: specialtyResults});
-    //                                 resovle2();
-    //                             });
-    //                         })
-    //                     }
-    //                     fn2 = async function(){
-    //                         console.log('fn2 start')
-    //                         await f2(item);
-    //                         console.log('fn2 end')
-    //                     }();
-    //                 });
-    //
-    //                 resovle1();
-    //             })
-    //         }
-    //         fn1 = async function() {
-    //             console.log('fn1 start')
-    //             await f1(clinicResults);
-    //             console.log(json)
-    //             await response.json(json);
-    //             console.log('fn2 end')
-    //         }();
-    //     }
-    // });
-
-
-
-    // let json=[];
-    // let sql='SELECT * from Clinic';
-    // db.query(sql, function (error,clinicResults) {
-    //     FOR=function (result) {
-    //         return new Promise(function (resovle) {
-    //             for (let index = 0; index < result.length; index++)
-    //             {
-    //                 sql = 'SELECT * from Specialty where clinic = ?';
-    //                 db.query(sql, result[index]['id'], function (error, specialtyResults) {
-    //                     json.push({label: result[index]['name'], value: result[index]['name'], children: specialtyResults});
-    //                 });
-    //             }
-    //             // result.forEach(async function (item) {
-    //             //     sql = 'SELECT * from Specialty where clinic = ?';
-    //             //     db.query(sql, item['id'], function (error, specialtyResults) {
-    //             //         json.push({label: item['name'], value: item['name'], children: specialtyResults});
-    //             //     });
-    //             // });
-    //             resovle();
-    //         })
-    //     };
-    //     fn=async function (){
-    //         await FOR(clinicResults);
-    //         response.json(json);
-    //     }();
-    // });
-
-
-
     let json = [];
     let sql = "SELECT * from Clinic";
     new Promise((resolve) => {
@@ -240,11 +179,22 @@ app.get('/getClinicAndSpecialty',(request,response)=>{
                         }
                         else
                         {
-                            json.push({
-                                label: clinicResults[index]["name"],
-                                value: clinicResults[index]["id"],
-                                children: specialtyResults,
-                            });
+                            console.log(specialtyResults)
+                            if (specialtyResults.length===0)
+                            {
+                                json.push({
+                                    label: clinicResults[index]["name"],
+                                    value: clinicResults[index]["id"]
+                                });
+                            }
+                            else
+                            {
+                                json.push({
+                                    label: clinicResults[index]["name"],
+                                    value: clinicResults[index]["id"],
+                                    children: specialtyResults,
+                                });
+                            }
                             resolve();
                         }
                     }
@@ -257,4 +207,11 @@ app.get('/getClinicAndSpecialty',(request,response)=>{
         });
     })
 });
-// db.end();
+
+
+
+process.on('SIGINT',()=>{
+    db.end();
+    console.log('Exiting...');
+    process.exit();
+})
